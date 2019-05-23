@@ -28,6 +28,7 @@ import org.pentaho.di.core.exception.KettleXMLException;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.row.value.ValueMetaFactory;
+import org.pentaho.di.core.row.value.ValueMetaString;
 import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
@@ -53,39 +54,88 @@ import java.util.List;
 @Step( id = "CoreNLPSentenceTokenizer", image = "CoreNLPSentenceTokenizer.svg", name = "Split Sentences",
     description = "Uses a model to split sentences.", categoryDescription = "Transform" )
 public class CoreNLPSentenceTokenizerMeta extends BaseStepMeta implements StepMetaInterface {
-  
+  private String tokenizeOptions = "";
+  private String inField = "";
+  private String outField = "";
+
   private static Class<?> PKG = CoreNLPSentenceTokenizer.class; // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
 
   public CoreNLPSentenceTokenizerMeta() {
     super(); // allocate BaseStepMeta
   }
 
-  public void loadXML( Node stepnode, List<DatabaseMeta> databases, IMetaStore metaStore ) throws KettleXMLException {
-    readData( stepnode );
+  public String getTokenizeOptions() {
+    return tokenizeOptions;
+  }
+
+  public void setTokenizeOptions(String tokenizeOptions) {
+    this.tokenizeOptions = tokenizeOptions;
+  }
+
+  public String getInField() {
+    return inField;
+  }
+
+  public void setInField(String inField) {
+    this.inField = inField;
+  }
+
+  public String getOutField() {
+    return outField;
+  }
+
+  public void setOutField(String outField) {
+    this.outField = outField;
+  }
+
+  public void loadXML(Node stepnode, List<DatabaseMeta> databases, IMetaStore metaStore ) throws KettleXMLException {
+    try {
+      setInField(XMLHandler.getNodeValue(XMLHandler.getSubNode(stepnode, "inField")));
+      setOutField(XMLHandler.getNodeValue(XMLHandler.getSubNode(stepnode, "outField")));
+      setTokenizeOptions(XMLHandler.getNodeValue(XMLHandler.getSubNode(stepnode, "tokenizeOptions")));
+    } catch ( Exception e ) {
+      throw new KettleXMLException( "Demo plugin unable to read step info from XML node", e );
+    }
   }
 
   public Object clone() {
     Object retval = super.clone();
     return retval;
   }
-  
-  private void readData( Node stepnode ) {
-    // Parse the XML (starting with the given stepnode) to extract the step metadata (into member variables, for example)
-  }
 
   public void setDefault() {
+    this.inField = "";
+    this.outField = "";
+    this.tokenizeOptions = "";
   }
 
   public void readRep( Repository rep, IMetaStore metaStore, ObjectId id_step, List<DatabaseMeta> databases ) throws KettleException {
+    try {
+      inField  = rep.getStepAttributeString(id_step, "inField" );
+      outField = rep.getStepAttributeString(id_step, "outField");
+      tokenizeOptions = rep.getStepAttributeString(id_step, "tokenizeOptions");
+    } catch ( Exception e ) {
+      throw new KettleException( "Unable to load step from repository", e );
+    }
   }
   
   public void saveRep( Repository rep, IMetaStore metaStore, ObjectId id_transformation, ObjectId id_step )
     throws KettleException {
+    try {
+      rep.saveStepAttribute( id_transformation, id_step, "inField", inField);
+      rep.saveStepAttribute( id_transformation, id_step, "outField", outField);
+      rep.saveStepAttribute( id_transformation, id_step, "tokenizeOptions", tokenizeOptions);
+    } catch ( Exception e ) {
+      throw new KettleException( "Unable to save step into repository: " + id_step, e );
+    }
   }
   
   public void getFields( RowMetaInterface rowMeta, String origin, RowMetaInterface[] info, StepMeta nextStep, 
     VariableSpace space, Repository repository, IMetaStore metaStore ) throws KettleStepException {
-    // Default: nothing changes to rowMeta
+    ValueMetaInterface v0 = new ValueMetaString(outField);
+    v0.setTrimType(ValueMetaInterface.TRIM_TYPE_BOTH);
+    v0.setOrigin(origin);
+    rowMeta.addValueMeta(v0);
   }
   
   public void check( List<CheckResultInterface> remarks, TransMeta transMeta, 
