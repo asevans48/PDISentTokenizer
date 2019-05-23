@@ -24,6 +24,7 @@ import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
+import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.exception.KettleXMLException;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMetaInterface;
@@ -92,10 +93,16 @@ public class CoreNLPSentenceTokenizerMeta extends BaseStepMeta implements StepMe
     try {
       setInField(XMLHandler.getNodeValue(XMLHandler.getSubNode(stepnode, "inField")));
       setOutField(XMLHandler.getNodeValue(XMLHandler.getSubNode(stepnode, "outField")));
-      setTokenizeOptions(XMLHandler.getNodeValue(XMLHandler.getSubNode(stepnode, "tokenizeOptions")));
     } catch ( Exception e ) {
       throw new KettleXMLException( "Demo plugin unable to read step info from XML node", e );
     }
+  }
+
+  public String getXML() throws KettleValueException {
+    StringBuilder xml = new StringBuilder();
+    xml.append( XMLHandler.addTagValue( "inField", inField ) );
+    xml.append(XMLHandler.addTagValue("outField", outField));
+    return xml.toString();
   }
 
   public Object clone() {
@@ -113,7 +120,6 @@ public class CoreNLPSentenceTokenizerMeta extends BaseStepMeta implements StepMe
     try {
       inField  = rep.getStepAttributeString(id_step, "inField" );
       outField = rep.getStepAttributeString(id_step, "outField");
-      tokenizeOptions = rep.getStepAttributeString(id_step, "tokenizeOptions");
     } catch ( Exception e ) {
       throw new KettleException( "Unable to load step from repository", e );
     }
@@ -124,7 +130,6 @@ public class CoreNLPSentenceTokenizerMeta extends BaseStepMeta implements StepMe
     try {
       rep.saveStepAttribute( id_transformation, id_step, "inField", inField);
       rep.saveStepAttribute( id_transformation, id_step, "outField", outField);
-      rep.saveStepAttribute( id_transformation, id_step, "tokenizeOptions", tokenizeOptions);
     } catch ( Exception e ) {
       throw new KettleException( "Unable to save step into repository: " + id_step, e );
     }

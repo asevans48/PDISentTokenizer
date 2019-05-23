@@ -1,7 +1,7 @@
 <features xmlns="http://karaf.apache.org/xmlns/features/v1.0.0">
 
-  <feature name="libpostal-expander-plugin-feature" version="1.0-SNAPSHOT">
-    <bundle>mvn:com.si/corenlp-sent-tokenize-feature/1.0-SNAPSHOT</bundle>
-  </feature>
+    <feature name="corenlp-sent-tokenize-pdi" version="1.0-SNAPSHOT">
+        <bundle>mvn:com.si/corenlp-sent-tokenize-pdi/1.0-SNAPSHOT</bundle>
+    </feature>
 
 </features>

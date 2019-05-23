@@ -72,10 +72,6 @@ public class CoreNLPSentenceTokenizerDialog extends BaseStepDialog implements St
   private TextVar wOutField;
   private FormData fdlOutFieldName, fdlOutField;
 
-  private Label wOptionsName;
-  private TextVar wOptionsOut;
-  private FormData fdlOptionsName, fdlOptions;
-
 
   private Button wCancel;
   private Button wOK;
@@ -195,32 +191,12 @@ public class CoreNLPSentenceTokenizerDialog extends BaseStepDialog implements St
     fdlOutField.right = new FormAttachment(100, 0);
     wOutField.setLayoutData(fdlOutField);
 
-    // set the Tokenize Options
-    wOptionsName = new Label(shell, SWT.RIGHT);
-    wOptionsName.setText(BaseMessages.getString(PKG, "CoreNLPSentenceTokenizerDialog.Fields.Options"));
-    props.setLook(wOptionsName);
-    fdlOptionsName = new FormData();
-    fdlOptionsName.left = new FormAttachment(0, 0);
-    fdlOptionsName.top = new FormAttachment(wOutFieldName, 15);
-    fdlOptionsName.right = new FormAttachment(middle, -margin);
-    wOptionsName.setLayoutData(fdlOptionsName);
-
-    wOptionsOut = new TextVar(transMeta, shell, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
-    wOptionsOut.setText("");
-    wOptionsOut.addModifyListener(lsMod);
-    props.setLook(wOptionsOut);
-    fdlOptions = new FormData();
-    fdlOptions.left = new FormAttachment(middle, 0);
-    fdlOptions.top = new FormAttachment(wOutFieldName, 15);
-    fdlOptions.right = new FormAttachment(100, 0);
-    wOptionsOut.setLayoutData(fdlOptions);
-
     // OK and cancel buttons
     wOK = new Button(shell, SWT.PUSH);
     wOK.setText(BaseMessages.getString(PKG, "System.Button.OK"));
     wCancel = new Button(shell, SWT.PUSH);
     wCancel.setText(BaseMessages.getString(PKG, "System.Button.Cancel"));
-    setButtonPositions(new Button[]{wOK, wCancel}, margin, wOptionsName);
+    setButtonPositions(new Button[]{wOK, wCancel}, margin, wOutFieldName);
 
     // Add listeners for cancel and OK
     lsCancel = new Listener() {
@@ -245,7 +221,6 @@ public class CoreNLPSentenceTokenizerDialog extends BaseStepDialog implements St
     wStepname.addSelectionListener(lsDef);
     wInFieldCombo.addSelectionListener(lsDef);
     wOutField.addSelectionListener(lsDef);
-    wOptionsOut.addSelectionListener(lsDef);
 
     // Detect X or ALT-F4 or something that kills this window and cancel the dialog properly
     shell.addShellListener(new ShellAdapter() {
@@ -284,7 +259,6 @@ public class CoreNLPSentenceTokenizerDialog extends BaseStepDialog implements St
     wStepname.selectAll();
     wInFieldCombo.setText(Const.NVL(meta.getInField(), ""));
     wOutField.setText(Const.NVL(meta.getOutField(), ""));
-    wOptionsOut.setText(Const.NVL(meta.getTokenizeOptions(), ""));
     wStepname.setFocus();
   }
 
@@ -307,7 +281,6 @@ public class CoreNLPSentenceTokenizerDialog extends BaseStepDialog implements St
     stepname = wStepname.getText();
     meta.setInField(wInFieldCombo.getText());
     meta.setOutField(wOutField.getText());
-    meta.setTokenizeOptions(wOptionsOut.getText());
     dispose();
   }
 }

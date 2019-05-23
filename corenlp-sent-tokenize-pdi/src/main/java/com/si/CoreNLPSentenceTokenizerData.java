@@ -24,20 +24,12 @@ import org.pentaho.di.trans.step.StepDataInterface;
 
 
 public class CoreNLPSentenceTokenizerData extends BaseStepData implements StepDataInterface {
-  private RowMetaInterface outputRowMeta;
+  public RowMetaInterface outputRowMeta;
 
   /**
    * Initialize the tokenizer data.
    */
   public CoreNLPSentenceTokenizerData() {
     super();
-  }
-
-  public RowMetaInterface getOutputRowMeta() {
-    return outputRowMeta;
-  }
-
-  public void setOutputRowMeta(RowMetaInterface outputRowMeta) {
-    this.outputRowMeta = outputRowMeta;
   }
 }

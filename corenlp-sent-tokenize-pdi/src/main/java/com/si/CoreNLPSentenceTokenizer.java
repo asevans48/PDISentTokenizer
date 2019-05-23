@@ -19,8 +19,11 @@
 package com.si;
 
 import edu.stanford.nlp.ling.CoreLabel;
+import edu.stanford.nlp.ling.HasWord;
 import edu.stanford.nlp.process.CoreLabelTokenFactory;
+import edu.stanford.nlp.process.DocumentPreprocessor;
 import edu.stanford.nlp.process.PTBTokenizer;
+import edu.stanford.nlp.process.TokenizerFactory;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -33,6 +36,8 @@ import org.pentaho.di.trans.step.*;
 
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.List;
+
 
 /**
  * Describe your step plugin.
@@ -91,16 +96,15 @@ public class CoreNLPSentenceTokenizer extends BaseStep implements StepInterface 
   private ArrayList<Object[]> splitSentence(RowMetaInterface rowMeta, String splitText, Object[] r){
     ArrayList<Object[]> orows = new ArrayList<Object[]>();
     try (StringReader reader = new StringReader(splitText)) {
-      String options = meta.getTokenizeOptions();
-      CoreLabelTokenFactory tokenFactory = new CoreLabelTokenFactory();
-      PTBTokenizer<CoreLabel> tokenizer = new PTBTokenizer<>(reader,
-              tokenFactory,
-              options);
-      while(tokenizer.hasNext()){
-        CoreLabel label = tokenizer.next();
-        String sentence = label.toString();
+      DocumentPreprocessor dp = new DocumentPreprocessor(reader);
+      for(List<HasWord> sentenceList : dp){
+        String sentence = "";
+        for(HasWord word : sentenceList){
+          String text = word.word();
+          sentence = sentence + " " + text;
+        }
         if(sentence != null && sentence.trim().length() > 0) {
-          Object[] orow = packageRow(rowMeta, sentence, r.clone());
+          Object[] orow = packageRow(rowMeta, sentence.trim(), r.clone());
           orows.add(orow);
         }
       }
@@ -120,7 +124,10 @@ public class CoreNLPSentenceTokenizer extends BaseStep implements StepInterface 
     int idx = rowMeta.indexOfValue(meta.getInField());
     if(idx >= 0) {
       String splitText = (String) r[idx];
-
+      if(splitText != null && splitText.length() > 0) {
+        ArrayList<Object[]> rows = splitSentence(rowMeta, splitText, r);
+        orows.addAll(rows);
+      }
     }else{
       if(isBasic()){
         logBasic("Input Field Index Not Found for Sentence Tokenizer");
@@ -136,11 +143,19 @@ public class CoreNLPSentenceTokenizer extends BaseStep implements StepInterface 
    * @return            The updated row meta interface
    */
   public RowMetaInterface processRowMeta(RowMetaInterface rmi) throws KettleException{
-    String[] fieldNames = rmi.getFieldNames();
-    String[] fields = {meta.getOutField()};
-    for(String field : fields){
-      if(stringArrayContains(fieldNames, field) == -1){
-        ValueMetaInterface value = ValueMetaFactory.createValueMeta(field, ValueMetaInterface.TYPE_STRING);
+    String[] fields = rmi.getFieldNames();
+    String[] fieldnames = {meta.getOutField(), };
+
+    int idx = stringArrayContains(fields, meta.getOutField());
+    if(idx == -1){
+      throw new KettleException("Sent Tokenizer missing output field");
+    }
+
+    for(int i = 0; i < fieldnames.length; i++){
+      String fname = fieldnames[i];
+      int cidx = stringArrayContains(fields, fname);
+      if(cidx == -1){
+        ValueMetaInterface value = ValueMetaFactory.createValueMeta(fname, ValueMetaInterface.TYPE_STRING);
         rmi.addValueMeta(value);
       }
     }
@@ -173,10 +188,10 @@ public class CoreNLPSentenceTokenizer extends BaseStep implements StepInterface 
    * @throws KettleException
    */
   private void setupProcessor() throws KettleException{
-    RowMetaInterface inMeta = getInputRowMeta().clone();;
-    meta.getFields(inMeta, getStepname(), null, null, this, null, null);
-    data.setOutputRowMeta(inMeta);
-    processRowMeta(inMeta);
+    RowMetaInterface inMeta = getInputRowMeta().clone();
+    data.outputRowMeta = inMeta;
+    meta.getFields(data.outputRowMeta, getStepname(), null, null, this, null, null);
+    data.outputRowMeta = processRowMeta(data.outputRowMeta);
     first = false;
   }
 
@@ -190,10 +205,15 @@ public class CoreNLPSentenceTokenizer extends BaseStep implements StepInterface 
   private void outputRows(ArrayList<Object[]> orows, Object[] r) throws KettleException{
     if(orows.size() > 0) {
       for(Object[] row : orows){
-        putRow(getInputRowMeta(), row); // copy row to possible alternate rowset(s).
+        putRow(data.outputRowMeta, row);
       }
     }else{
-      putRow(data.getOutputRowMeta(), r); // copy row to possible alternate rowset(s).
+      if(data.outputRowMeta.size() > r.length){
+       Object[] rsz = RowDataUtil.resizeArray(r, data.outputRowMeta.size());
+       putRow(data.outputRowMeta, rsz);
+      }else {
+        putRow(data.outputRowMeta, r);
+      }
     }
   }
 
@@ -216,10 +236,8 @@ public class CoreNLPSentenceTokenizer extends BaseStep implements StepInterface 
       setupProcessor();
     }
 
-    if(data.getOutputRowMeta().size() > r.length){
-      r = RowDataUtil.resizeArray(r, data.getOutputRowMeta().size());
-    }
-    ArrayList<Object[]> orows = getSentences(data.getOutputRowMeta(), r);
+    r = RowDataUtil.resizeArray(r, data.outputRowMeta.size());
+    ArrayList<Object[]> orows = getSentences(data.outputRowMeta, r);
     outputRows(orows, r);
 
     if ( checkFeedback( getLinesRead() ) ) {
